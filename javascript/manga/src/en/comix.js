@@ -12,7 +12,7 @@ const mangayomiSources = [
     hasCloudflare: false,
     sourceCodeUrl: "",
     apiUrl: "https://comix-api.vercel.app/api/manga",
-    version: "0.1.0",
+    version: "0.1.1",
     isManga: true,
     itemType: 0,
     isFullData: false,
@@ -46,7 +46,7 @@ class DefaultExtension extends MProvider {
   }
 
   async request(path) {
-    const res = await this.client.get(this.getApiUrl() + path, this.getHeaders());
+    const res = await this.client.get(this.getApiUrl() + path);
     if (res.statusCode < 200 || res.statusCode >= 300) {
       throw new Error("Comix API request failed: " + res.statusCode);
     }
@@ -70,7 +70,7 @@ class DefaultExtension extends MProvider {
       return this.browse(page, "popular");
     }
 
-    const data = await this.request("/home");
+    const data = await this.request("/home?sfw=true");
     const list = (data.popular || []).map(x => this.makeItem(x));
     return { list, hasNextPage: false };
   }
@@ -86,7 +86,8 @@ class DefaultExtension extends MProvider {
   }
 
   async browse(page, mode) {
-    const path = "/browse?page=" + page + "&limit=30&sort=" + encodeURIComponent(mode);
+    const sort = mode === "popular" ? "score:desc" : "chapter_updated_at:desc";
+    const path = "/browse?page=" + page + "&limit=30&sort=" + encodeURIComponent(sort) + "&sfw=true";
     const data = await this.request(path);
     const results = data.results || data.items || [];
     const list = results.map(x => this.makeItem(x));
@@ -97,7 +98,7 @@ class DefaultExtension extends MProvider {
   }
 
   async search(query, page, filters) {
-    const path = "/search?q=" + encodeURIComponent(query) + "&page=" + page + "&limit=30";
+    const path = "/search?q=" + encodeURIComponent(query) + "&page=" + page + "&limit=30&sfw=true";
     const data = await this.request(path);
     const results = data.results || data.items || [];
     const list = results.map(x => this.makeItem(x));
@@ -122,7 +123,7 @@ class DefaultExtension extends MProvider {
 
     while (keepGoing && page <= 100) {
       const chapterData = await this.request(
-        "/" + encodeURIComponent(id) + "/chapters?page=" + page + "&limit=100"
+        "/" + encodeURIComponent(id) + "/chapters?page=" + page + "&limit=100&sfw=true"
       );
 
       const items = chapterData.chapters || chapterData.results || chapterData.items || [];
@@ -146,7 +147,7 @@ class DefaultExtension extends MProvider {
           name: name,
           url: chapterId,
           scanlator: item.scanlation_group?.name || item.scanlation_group_name || "",
-          dateUpload: dateUpload
+          dateUpload: dateUpload === null ? null : String(dateUpload)
         });
       }
 
@@ -196,8 +197,9 @@ class DefaultExtension extends MProvider {
 
     return images
       .map(item => {
-        const imageUrl = typeof item === "string" ? item : item.url;
+        let imageUrl = typeof item === "string" ? item : item.url;
         if (!imageUrl) return null;
+        if (imageUrl.startsWith("/")) imageUrl = "https://comix-api.vercel.app" + imageUrl;
         return { url: imageUrl, headers: this.getHeaders() };
       })
       .filter(Boolean);
