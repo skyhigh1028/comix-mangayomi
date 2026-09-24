@@ -80,7 +80,7 @@ class DefaultExtension extends MProvider {
       return this.browse(page, "latest");
     }
 
-    const data = await this.request("/home");
+    const data = await this.request("/home?sfw=true");
     const list = (data.latest || []).map(x => this.makeItem(x));
     return { list, hasNextPage: false };
   }
@@ -123,7 +123,7 @@ class DefaultExtension extends MProvider {
 
     while (keepGoing && page <= 100) {
       const chapterData = await this.request(
-        "/" + encodeURIComponent(id) + "/chapters?page=" + page + "&limit=100&sfw=true"
+        "/" + encodeURIComponent(id) + "/chapters?page=" + page + "&limit=100"
       );
 
       const items = chapterData.chapters || chapterData.results || chapterData.items || [];
