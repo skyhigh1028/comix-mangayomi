@@ -12,7 +12,7 @@ const mangayomiSources = [
     hasCloudflare: false,
     sourceCodeUrl: "",
     apiUrl: "https://comix-api.vercel.app/api/manga",
-    version: "0.1.1",
+    version: "0.1.2",
     isManga: true,
     itemType: 0,
     isFullData: false,
